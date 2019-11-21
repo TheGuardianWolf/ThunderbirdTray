@@ -102,8 +102,8 @@ namespace ThunderbirdTray
         public void StartThunderbird()
         {
             string filename = null;
-            var filename64 = @"C:\Program Files\Mozilla Thunderbird\thunderbird.exe";
-            var filename86 = @"C:\Program Files (x86)\Mozilla Thunderbird\thunderbird.exe";
+            var filename64 = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramW6432%"), "Mozilla Thunderbird", "thunderbird.exe");
+            var filename86 = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles(x86)%"), "Mozilla Thunderbird", "thunderbird.exe");
 
             if (File.Exists(filename64))
             {

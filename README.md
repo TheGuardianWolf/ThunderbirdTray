@@ -34,6 +34,8 @@ will remain in the tray and can restore the window if clicked on.
 
 To exit, right click the tray application and click exit. This will not close Thunderbird.
 
+Closing Thunderbird however will close this application.
+
 ### HELP I CAN'T FIND THUNDERBIRD
 
 If you've somehow lost the Thunderbird window and/or the application crashes, simply open thunderbird manually 
