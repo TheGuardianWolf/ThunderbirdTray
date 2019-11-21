@@ -2,6 +2,14 @@
 
 Minimise thunderbird to tray with a Windows tray app.
 
+## Complementary Add-ons
+
+This list of add-ons might be useful if you use this application.
+
+* [Minimise on Close](https://addons.thunderbird.net/en-us/thunderbird/addon/minimize-on-close/)
+
+Got suggestions? Throw me an issue.
+
 ## What is this?
 
 This application is intended to replace the unreliable "MinimiseToTray" addons that are not 
