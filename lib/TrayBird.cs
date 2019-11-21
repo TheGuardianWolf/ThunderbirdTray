@@ -13,6 +13,8 @@ namespace ThunderbirdTray
 {
     public partial class TrayBird : ApplicationContext
     {
+        public static readonly string Guid = ((GuidAttribute)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(GuidAttribute), true)[0]).Value;
+
         private NotifyIcon notifyIcon;
         private ContextMenu contextMenu;
 

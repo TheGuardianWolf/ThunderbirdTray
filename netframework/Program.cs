@@ -1,20 +1,21 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace ThunderbirdTray
+namespace ThunderbirdTray.NETFramework
 {
     static class Program
     {
-        static string appGuid = "299462ce-7579-45d0-afcc-8ea50db9a11b";
-
         /// <summary>
-        ///  The main entry point for the application.
+        /// The main entry point for the application.
         /// </summary>
         [STAThread]
         static void Main()
         {
-            using (Mutex mutex = new Mutex(false, "Global\\" + appGuid))
+            using (Mutex mutex = new Mutex(false, "Global\\" + TrayBird.Guid))
             {
                 if (!mutex.WaitOne(0, false))
                 {
@@ -22,7 +23,6 @@ namespace ThunderbirdTray
                     return;
                 }
 
-                Application.SetHighDpiMode(HighDpiMode.SystemAware);
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
                 Application.Run(new TrayBird());
