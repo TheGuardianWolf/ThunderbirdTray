@@ -2,6 +2,13 @@
 
 Minimise thunderbird to tray with a Windows tray app.
 
+Tested on Windows 10.
+
+.NET Core 3.0 (x86) Runtime or SDK is required for the runtime release. The self contained release packages the 
+required files.
+
+Get the .NET Core runtime [here](https://dotnet.microsoft.com/download/dotnet-core/current/runtime).
+
 ## Complementary Add-ons
 
 This list of add-ons might be useful if you use this application.
