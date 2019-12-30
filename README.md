@@ -6,7 +6,7 @@ Tested on Windows 10.
 
 .NET Framework 4.6.1 Runtime is required for netframework release. This should be preinstalled on Windows 10.
 
-.NET Core 3.0 (x86) Runtime or SDK is required for the netcore runtime release.
+.NET Core 3.1 Runtime or SDK is required for the netcore runtime release.
 
 Get the .NET Core runtime [here](https://dotnet.microsoft.com/download/dotnet-core/current/runtime).
 
