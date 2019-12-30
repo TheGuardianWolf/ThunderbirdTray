@@ -4,19 +4,15 @@ Minimise thunderbird to tray with a Windows tray app.
 
 Tested on Windows 10.
 
-.NET Framework 4.6.1 Runtime is required for netframework release. This should be preinstalled on Windows 10.
-
-.NET Core 3.1 Runtime or SDK is required for the netcore runtime release.
-
-Get the .NET Core runtime [here](https://dotnet.microsoft.com/download/dotnet-core/current/runtime).
-
 ## Releases
 
 Get the releases [here](https://github.com/TheGuardianWolf/ThunderbirdTray/releases).
 
-* Recommended: NET Framework requires .NET Framework 4.6.1 runtime
-* NET Core - Self Contained requires no installed runtimes
-* NET Core - Runtime requires .NET Core 3.1 (x86) runtime
+The releases are seperated into a few versions for compatiblity reasons.
+
+* NET Framework - Requires .NET Framework 4.6.1 runtime, preinstalled on Windows 10. **Recommended**.
+* NET Core - Self Contained requires no installed runtimes.
+* NET Core - Requires [.NET Core 3.1 runtime](https://dotnet.microsoft.com/download/dotnet-core/current/runtime).
 
 It is recommended to use .NET Framework if you are not sure what version to use.
 
