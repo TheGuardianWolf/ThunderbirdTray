@@ -16,25 +16,28 @@ namespace ThunderbirdTray
         public static readonly string Guid = ((GuidAttribute)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(GuidAttribute), true)[0]).Value;
 
         private NotifyIcon notifyIcon;
-        private ContextMenu contextMenu;
+        private ContextMenuStrip contextMenu;
 
         private Task initTask;
         private Process thunderbirdProcess;
         private IntPtr thunderbirdMainWindowHandle;
         private bool thunderbirdShown = true;
+        private WindowVisualState lastVisualState = WindowVisualState.Normal;
 
         public TrayBird()
         {
-            MenuItem showMenuItem = new MenuItem("Show / Hide Thunderbird", new EventHandler(ToggleShowThunderbird));
-            showMenuItem.DefaultItem = true;
-            MenuItem configMenuItem = new MenuItem("Configuration", new EventHandler(ShowConfig));
-            configMenuItem.Enabled = false;
-            MenuItem exitMenuItem = new MenuItem("Exit", new EventHandler(Exit));
-            contextMenu = new ContextMenu(new MenuItem[] { showMenuItem, configMenuItem, exitMenuItem });
+            ToolStripMenuItem showMenuItem = new ToolStripMenuItem("Show / Hide Thunderbird", null, new EventHandler(ToggleShowThunderbird));
+            showMenuItem.Font = new Font(showMenuItem.Font, showMenuItem.Font.Style | FontStyle.Bold);
+            //ToolStripMenuItem configMenuItem = new ToolStripMenuItem("Configuration", null, new EventHandler(ShowConfig));
+            //configMenuItem.Enabled = false;
+            ToolStripMenuItem exitMenuItem = new ToolStripMenuItem("Exit", null, new EventHandler(Exit));
+            contextMenu = new ContextMenuStrip();
+            contextMenu.Items.AddRange(new ToolStripMenuItem[] { showMenuItem, /*configMenuItem,*/ exitMenuItem });
+
 
             notifyIcon = new NotifyIcon();
             notifyIcon.Icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
-            notifyIcon.ContextMenu = contextMenu;
+            notifyIcon.ContextMenuStrip = contextMenu;
             notifyIcon.Click += NotifyIcon_Click;
             notifyIcon.Visible = true;
 
@@ -122,7 +125,6 @@ namespace ThunderbirdTray
                     {
                         FileName = filename,
                         CreateNoWindow = true,
-                        //ErrorDialog = false,
                         WindowStyle = ProcessWindowStyle.Minimized,
                         UseShellExecute = true
                     }
@@ -135,7 +137,7 @@ namespace ThunderbirdTray
 
         private void ShowThunderbird()
         {
-            ShowWindow(thunderbirdMainWindowHandle, 1);
+            ShowWindow(thunderbirdMainWindowHandle, lastVisualState == WindowVisualState.Maximized ? 3 : 1);
             SetForegroundWindow(thunderbirdMainWindowHandle);
             thunderbirdMainWindowHandle = thunderbirdProcess.MainWindowHandle;
             thunderbirdShown = true;
@@ -179,13 +181,6 @@ namespace ThunderbirdTray
             {
                 // Main window is lost (hidden)
                 return false;
-
-                //thunderbirdMainWindowHandle = FindWindowEx(IntPtr.Zero, IntPtr.Zero, "MozillaWindowClass", null);
-                //thunderbirdShown = false;
-                //thunderbirdProcess.Dispose();
-                //thunderbirdProcess = null;
-
-                //StartThunderbird();
             }
 
             thunderbirdMainWindowHandle = thunderbirdProcess.MainWindowHandle;
@@ -193,6 +188,7 @@ namespace ThunderbirdTray
             thunderbirdProcess.EnableRaisingEvents = true;
             thunderbirdProcess.Exited += Thunderbird_Exited;
             var thunderbirdElement = AutomationElement.FromHandle(thunderbirdMainWindowHandle);
+            lastVisualState = (WindowVisualState)thunderbirdElement.GetCurrentPropertyValue(WindowPattern.WindowVisualStateProperty);
             Automation.AddAutomationPropertyChangedEventHandler(
                 thunderbirdElement,
                 TreeScope.Element,
@@ -229,6 +225,7 @@ namespace ThunderbirdTray
                 // Update window handle in case something odd happens
                 thunderbirdMainWindowHandle = thunderbirdProcess.MainWindowHandle;
                 thunderbirdShown = true;
+                lastVisualState = visualState;
             }
         }
 
@@ -290,10 +287,5 @@ namespace ThunderbirdTray
 
         [DllImport("user32.dll", SetLastError = true)]
         static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string lpszWindow);
-
-        //internal delegate bool EnumThreadWindowsCallback(IntPtr hWnd, IntPtr lParam);
-
-        //[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        //private static extern bool EnumWindows(EnumThreadWindowsCallback callback, IntPtr extraData);
     }
 }
