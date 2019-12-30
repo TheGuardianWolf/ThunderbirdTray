@@ -10,6 +10,16 @@ Tested on Windows 10.
 
 Get the .NET Core runtime [here](https://dotnet.microsoft.com/download/dotnet-core/current/runtime).
 
+## Releases
+
+Get the releases [here](https://github.com/TheGuardianWolf/ThunderbirdTray/releases).
+
+* Recommended: NET Framework requires .NET Framework 4.6.1 runtime
+* NET Core - Self Contained requires no installed runtimes
+* NET Core - Runtime requires .NET Core 3.1 (x86) runtime
+
+It is recommended to use .NET Framework if you are not sure what version to use.
+
 ## Complementary Add-ons
 
 This list of add-ons might be useful if you use this application.
