@@ -10,12 +10,11 @@ from win32api import GetFileVersionInfo, LOWORD, HIWORD
 from tempfile import TemporaryFile
 from zipfile import ZipFile
 import traceback
-# import subprocess
 import winreg
 
 
 URL_RELEASES = "https://api.github.com/repos/TheGuardianWolf/ThunderbirdTray/releases"
-FOLDER_INSTALL = Path("./ThunderbirdTray").absolute()
+FOLDER_INSTALL = "./ThunderbirdTray"
 BLOCK_SIZE = 1024 * 512
 
 
@@ -62,6 +61,7 @@ def detect_runtime():
     except Exception:
         return "NETCore"
 
+
 def compare_versions(a, b):
     for curr, new in zip(a, b):
         if curr < new:
@@ -70,15 +70,17 @@ def compare_versions(a, b):
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--verbose", action="store_true", default=False)
-    parser.add_argument("-d", "--dir", default=None)
-    parser.add_argument("-f", "--force", action="store_true", default=False)
+    parser = argparse.ArgumentParser("Updater for ThunderbirdTray.")
+    parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Enable debug output.")
+    parser.add_argument("-d", "--dir", default=FOLDER_INSTALL)
+    parser.add_argument("-f", "--force", action="store_true", default=False, help="Will download latest regardless of current version.")
+    parser.add_argument("-p", "--pre", action="store_true", default=False, help="Allow pre-releases.")
+    parser.add_argument("--draft", action="store_true", default=False, help="Allow drafts." )
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format=logging.BASIC_FORMAT if args.verbose else "%(message)s")
     log = logging.getLogger(__file__)
 
-    install_dir = FOLDER_INSTALL if args.dir is None else Path(args.dir).absolute()
+    install_dir = Path(args.dir).absolute()
 
     log.info("Starting ThunderbirdTray updater, CTRL-C to abort.")
 
@@ -112,15 +114,24 @@ def main():
         input("Press enter to exit...")
         sys.exit(1)
 
-    latest = None
+    valid_releases = []
     for release in releases:
-        if not release["prerelease"] and len(release["assets"]) > 0:
-            latest = release
-            break
-    if latest is None:
+        if len(release["assets"]) > 0:
+            if (not release["prerelease"] or args.pre) and (not release["draft"] or args.draft):
+                try:
+                    modified_tag = release["tag_name"][1:].replace(".", "")
+                    tag_version = int(modified_tag.replace("-pre", "") if args.pre else modified_tag)
+                    valid_releases.append((tag_version, release))
+                except Exception:
+                    pass
+    valid_releases.sort(key=itemgetter(0), reverse=True)
+
+    if len(valid_releases) == 0:
         log.error("No valid release could be found.")
         input("Press enter to exit...")
         sys.exit(1)
+    else:
+        latest = valid_releases[0][1]
     
     version = [int(part) for part in latest["tag_name"][1:].split(".")]
     assets = latest["assets"]
