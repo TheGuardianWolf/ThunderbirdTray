@@ -216,8 +216,7 @@ def main():
             if install_dir_exists:
                 install_folder_files = os.listdir(install_dir)
                 for file in install_folder_files:
-                    if "ThunderbirdTray." in file:
-                        os.remove(install_dir.joinpath(file))
+                    os.remove(install_dir.joinpath(file))
             else:        
                 install_dir.mkdir(parents=True, exist_ok=True)
                 log.info(f"Directory {install_dir} created.")
