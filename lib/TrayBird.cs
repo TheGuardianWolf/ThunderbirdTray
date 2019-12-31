@@ -10,6 +10,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Serilog;
 using Serilog.Core;
+using ThunderbirdTray.Win32;
 
 namespace ThunderbirdTray
 {
@@ -173,8 +174,9 @@ namespace ThunderbirdTray
         private void ShowThunderbird()
         {
             log.Debug("Showing Thunderbird with last state as {@lastVisualState}.", lastVisualState);
-            ShowWindow(thunderbirdMainWindowHandle, lastVisualState == WindowVisualState.Maximized ? 3 : 1);
-            SetForegroundWindow(thunderbirdMainWindowHandle);
+            var restoreState = lastVisualState == WindowVisualState.Maximized ? User32.SW_SHOWMAXIMIZED : User32.SW_SHOWNORMAL;
+            User32.ShowWindow(thunderbirdMainWindowHandle,  restoreState);
+            User32.SetForegroundWindow(thunderbirdMainWindowHandle);
             thunderbirdMainWindowHandle = thunderbirdProcess.MainWindowHandle;
             thunderbirdShown = true;
         }
@@ -182,7 +184,7 @@ namespace ThunderbirdTray
         private void HideThunderbird()
         {
             log.Debug("Hiding Thunderbird with last state as {@lastVisualState}.", lastVisualState);
-            ShowWindow(thunderbirdMainWindowHandle, 0);
+            User32.ShowWindow(thunderbirdMainWindowHandle, User32.SW_HIDE);
             thunderbirdShown = false;
         }
 
@@ -229,8 +231,6 @@ namespace ThunderbirdTray
             thunderbirdProcess.EnableRaisingEvents = true;
             thunderbirdProcess.Exited += Thunderbird_Exited;
             var thunderbirdElement = AutomationElement.FromHandle(thunderbirdMainWindowHandle);
-            lastVisualState = (WindowVisualState)thunderbirdElement.GetCurrentPropertyValue(WindowPattern.WindowVisualStateProperty);
-            log.Debug("Setting visual state as {@lastVisualState}.", lastVisualState);
             Automation.AddAutomationPropertyChangedEventHandler(
                 thunderbirdElement,
                 TreeScope.Element,
@@ -240,12 +240,20 @@ namespace ThunderbirdTray
             log.Debug("Attached event handlers for window.");
 
             // If not already hidden and is currently minimised, hide immediately
-            var isIconic = IsIconic(thunderbirdMainWindowHandle);
+            var isIconic = User32.IsIconic(thunderbirdMainWindowHandle);
             if (thunderbirdShown && isIconic)
             {
                 log.Information("Thunderbird is already minimised, hiding now. {@thunderbirdShown}, {@isIconic}.", thunderbirdShown, isIconic);
+                var windowFlags = User32.GetWindowPlacement(thunderbirdMainWindowHandle).flags;
+                // Because it is minimised, we can't get the last non-minimised state through UIAutomation, so P/Invoke it is.
+                lastVisualState = (windowFlags & User32.WPF_RESTORETOMAXIMIZED) > 0 ? WindowVisualState.Maximized : WindowVisualState.Normal;
                 HideThunderbird();
             }
+            else
+            {
+                lastVisualState = (WindowVisualState)thunderbirdElement.GetCurrentPropertyValue(WindowPattern.WindowVisualStateProperty);
+            }
+            log.Debug("Setting visual state as {@lastVisualState}.", lastVisualState);
 
             return true;
         }
@@ -296,7 +304,7 @@ namespace ThunderbirdTray
                     {
                         log.Debug("Previously hidden, show minimised.");
                         // If previously hidden, show minimised
-                        ShowWindow(thunderbirdMainWindowHandle, 2);
+                        User32.ShowWindow(thunderbirdMainWindowHandle, User32.SW_SHOWMINIMIZED);
                         thunderbirdMainWindowHandle = IntPtr.Zero;
                     }
                 }
@@ -326,18 +334,5 @@ namespace ThunderbirdTray
 
             base.Dispose(disposing);
         }
-
-        [DllImport("user32.dll")]
-        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-        [DllImport("user32.dll")]
-        static extern bool SetForegroundWindow(IntPtr hWnd);
-
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool IsIconic(IntPtr hWnd);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string lpszWindow);
     }
 }
