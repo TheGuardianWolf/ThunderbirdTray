@@ -13,6 +13,7 @@ import traceback
 import winreg
 
 
+VERSION = [1, 0, 0]
 URL_RELEASES = "https://api.github.com/repos/TheGuardianWolf/ThunderbirdTray/releases"
 FOLDER_INSTALL = "./ThunderbirdTray"
 BLOCK_SIZE = 1024 * 512
@@ -70,7 +71,7 @@ def compare_versions(a, b):
 
 
 def main():
-    parser = argparse.ArgumentParser("Updater for ThunderbirdTray.")
+    parser = argparse.ArgumentParser("Updater for ThunderbirdTray ({}).".format("v" + ".".join(map(str, VERSION))))
     parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Enable debug output.")
     parser.add_argument("-d", "--dir", default=FOLDER_INSTALL)
     parser.add_argument("-f", "--force", action="store_true", default=False, help="Will download latest regardless of current version.")
@@ -82,14 +83,12 @@ def main():
 
     install_dir = Path(args.dir).absolute()
 
-    log.info("Starting ThunderbirdTray updater, CTRL-C to abort.")
+    log.info("Starting ThunderbirdTray updater ({}), CTRL-C to abort.".format("v" + ".".join(map(str, VERSION))))
 
     log.info("Detecting current release...")
     install_dir_exists = Path(install_dir).is_dir()
     if not install_dir_exists:
         log.warning(f"Installation directory {install_dir} does not exist and will be created.")
-        install_dir.mkdir(parents=True, exist_ok=True)
-        log.info(f"Directory {install_dir} created.")
     else:
         log.warning(f"Installation directory {install_dir} will be cleaned on update.")
 
@@ -213,10 +212,14 @@ def main():
             input("Press enter to exit...")
             sys.exit(1)
         try:
-            install_folder_files = os.listdir(install_dir)
-            for file in install_folder_files:
-                if "ThunderbirdTray." in file:
-                    os.remove(install_dir.joinpath(file))
+            if install_dir_exists:
+                install_folder_files = os.listdir(install_dir)
+                for file in install_folder_files:
+                    if "ThunderbirdTray." in file:
+                        os.remove(install_dir.joinpath(file))
+            else:        
+                install_dir.mkdir(parents=True, exist_ok=True)
+                log.info(f"Directory {install_dir} created.")
             with ZipFile(temp_file, "r") as zip_file:
                 zip_file.extractall(FOLDER_INSTALL)
         except Exception:
