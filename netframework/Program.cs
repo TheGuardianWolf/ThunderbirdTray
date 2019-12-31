@@ -15,6 +15,17 @@ namespace ThunderbirdTray.NETFramework
         [STAThread]
         static void Main()
         {
+            var args = Environment.GetCommandLineArgs().ToList();
+            args.RemoveAt(0);
+            var debug = false;
+            foreach (var arg in args)
+            {
+                if (arg == "--debug")
+                {
+                    debug = true;
+                }
+            }
+
             using (Mutex mutex = new Mutex(false, "Global\\" + TrayBird.Guid))
             {
                 if (!mutex.WaitOne(0, false))
@@ -25,7 +36,7 @@ namespace ThunderbirdTray.NETFramework
 
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                Application.Run(new TrayBird());
+                Application.Run(new TrayBird(debug));
             }
         }
     }
