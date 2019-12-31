@@ -118,8 +118,9 @@ def main():
         if len(release["assets"]) > 0:
             if (not release["prerelease"] or args.pre) and (not release["draft"] or args.draft):
                 try:
-                    modified_tag = release["tag_name"][1:].replace(".", "")
-                    tag_version = int(modified_tag.replace("-pre", "") if args.pre else modified_tag)
+                    modified_tag = release["tag_name"][1:].replace("-pre", "") if args.pre else modified_tag
+                    tag_version = int(modified_tag.replace(".", ""))
+                    release["tag_name"] = modified_tag
                     valid_releases.append((tag_version, release))
                 except Exception:
                     pass
@@ -132,10 +133,10 @@ def main():
     else:
         latest = valid_releases[0][1]
     
-    version = [int(part) for part in latest["tag_name"][1:].split(".")]
+    version = latest["tag_name"].split(".")
     assets = latest["assets"]
 
-    log.info("Newest release is v{}.".format(".".join([str(part) for part in version])))
+    log.info("Newest release is v{}.".format(".".join(map(str, version))))
 
     up_to_date = compare_versions(current_version, version) if current_version is not None else False
     
