@@ -27,6 +27,9 @@ namespace ThunderbirdTray.Win32
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool GetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
 
+        [DllImport("user32.dll")]
+        public static extern bool SetWindowPlacement(IntPtr hWnd, [In] ref WINDOWPLACEMENT lpwndpl);
+
         public struct WINDOWPLACEMENT
         {
             public int length;
@@ -58,6 +61,11 @@ namespace ThunderbirdTray.Win32
             placement.length = Marshal.SizeOf(placement);
             GetWindowPlacement(windowHandle, ref placement);
             return placement;
+        }
+
+        public static void SetWindowPlacement(IntPtr windowHandle, WINDOWPLACEMENT windowPlacement)
+        {
+            SetWindowPlacement(windowHandle, ref windowPlacement);
         }
     }
 }

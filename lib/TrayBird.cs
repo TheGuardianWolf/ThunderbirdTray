@@ -27,7 +27,36 @@ namespace ThunderbirdTray
         private Process thunderbirdProcess;
         private IntPtr thunderbirdMainWindowHandle;
         private bool thunderbirdShown = true;
-        private WindowVisualState lastVisualState = WindowVisualState.Normal;
+        private WindowVisualState lastVisualState = WindowVisualState.Minimized;
+        private AutomationElement thunderbirdAutomationElement;
+        private int restoreState
+        {
+            get
+            {
+                if (lastVisualState == WindowVisualState.Minimized)
+                {
+                    if (thunderbirdMainWindowHandle != null)
+                    {
+                        if ((User32.GetWindowPlacement(thunderbirdMainWindowHandle).flags & User32.WPF_RESTORETOMAXIMIZED) > 0)
+                        {
+                            return User32.SW_MAXIMIZE;
+                        }
+                        else
+                        {
+                            return User32.SW_NORMAL;
+                        }
+                    }
+                    else
+                    {
+                        return User32.SW_NORMAL;
+                    }
+                }
+                else
+                {
+                    return lastVisualState == WindowVisualState.Maximized ? User32.SW_MAXIMIZE : User32.SW_NORMAL;
+                }
+            }
+        }
 
         public TrayBird(bool debugLog=true)
         {
@@ -174,8 +203,7 @@ namespace ThunderbirdTray
         private void ShowThunderbird()
         {
             log.Debug("Showing Thunderbird with last state as {@lastVisualState}.", lastVisualState);
-            var restoreState = lastVisualState == WindowVisualState.Maximized ? User32.SW_SHOWMAXIMIZED : User32.SW_SHOWNORMAL;
-            User32.ShowWindow(thunderbirdMainWindowHandle,  restoreState);
+            User32.ShowWindow(thunderbirdMainWindowHandle, restoreState);
             User32.SetForegroundWindow(thunderbirdMainWindowHandle);
             thunderbirdMainWindowHandle = thunderbirdProcess.MainWindowHandle;
             thunderbirdShown = true;
@@ -230,9 +258,9 @@ namespace ThunderbirdTray
 
             thunderbirdProcess.EnableRaisingEvents = true;
             thunderbirdProcess.Exited += Thunderbird_Exited;
-            var thunderbirdElement = AutomationElement.FromHandle(thunderbirdMainWindowHandle);
+            thunderbirdAutomationElement = AutomationElement.FromHandle(thunderbirdMainWindowHandle);
             Automation.AddAutomationPropertyChangedEventHandler(
-                thunderbirdElement,
+                thunderbirdAutomationElement,
                 TreeScope.Element,
                 Thunderbird_VisualStateChanged,
                 new AutomationProperty[] { WindowPattern.WindowVisualStateProperty });
@@ -244,14 +272,11 @@ namespace ThunderbirdTray
             if (thunderbirdShown && isIconic)
             {
                 log.Information("Thunderbird is already minimised, hiding now. {@thunderbirdShown}, {@isIconic}.", thunderbirdShown, isIconic);
-                var windowFlags = User32.GetWindowPlacement(thunderbirdMainWindowHandle).flags;
-                // Because it is minimised, we can't get the last non-minimised state through UIAutomation, so P/Invoke it is.
-                lastVisualState = (windowFlags & User32.WPF_RESTORETOMAXIMIZED) > 0 ? WindowVisualState.Maximized : WindowVisualState.Normal;
                 HideThunderbird();
             }
             else
             {
-                lastVisualState = (WindowVisualState)thunderbirdElement.GetCurrentPropertyValue(WindowPattern.WindowVisualStateProperty);
+                lastVisualState = (WindowVisualState)thunderbirdAutomationElement.GetCurrentPropertyValue(WindowPattern.WindowVisualStateProperty);
             }
             log.Debug("Setting visual state as {@lastVisualState}.", lastVisualState);
 
@@ -302,13 +327,19 @@ namespace ThunderbirdTray
                 {
                     if (!thunderbirdShown)
                     {
-                        log.Debug("Previously hidden, show minimised.");
-                        // If previously hidden, show minimised
-                        User32.ShowWindow(thunderbirdMainWindowHandle, User32.SW_SHOWMINIMIZED);
-                        thunderbirdMainWindowHandle = IntPtr.Zero;
+                        log.Debug("Previously hidden, showing.");
+                        // If previously hidden, show to avoid bug
+                        User32.ShowWindow(thunderbirdMainWindowHandle, User32.SW_NORMAL);
                     }
+
+                    thunderbirdMainWindowHandle = IntPtr.Zero;
                 }
 
+                if (thunderbirdAutomationElement != null)
+                {
+                    //Automation.RemoveAutomationPropertyChangedEventHandler(thunderbirdAutomationElement, Thunderbird_VisualStateChanged);
+                    thunderbirdAutomationElement = null;
+                }
                 thunderbirdProcess.Dispose();
                 thunderbirdProcess = null;
                 initTask = null;
