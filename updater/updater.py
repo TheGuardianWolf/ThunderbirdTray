@@ -209,7 +209,7 @@ def main():
                     print_progress(progress, file_size)
                     temp_file.write(buffer)
         except Exception:
-            log.error(f"Could download the latest release, please try again later: {traceback.format_exc()}")
+            log.error(f"Could not download the latest release, please try again later: {traceback.format_exc()}")
             input("Press enter to exit...")
             sys.exit(1)
         try:

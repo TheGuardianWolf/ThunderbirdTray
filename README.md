@@ -8,6 +8,8 @@ Tested on Windows 10.
 
 Get the releases [here](https://github.com/TheGuardianWolf/ThunderbirdTray/releases).
 
+An updater (ThunderbirdTrayUpdater.exe) is available to automatically download new releases. Simply run this and it will automatically download the right ZIP file and extract it for you.
+
 The releases are seperated into a few versions for compatiblity reasons.
 
 * NET Framework - Requires .NET Framework 4.6.1 runtime, preinstalled on Windows 10. **Recommended**.
@@ -32,6 +34,8 @@ if it is not already launched when the tray app is launched.
 
 ## How do I use this?
 
+### ThunderbirdTray
+
 Either launch the exe manually or put it in your startup folder to launch on login.
 
 To launch on startup:
@@ -39,6 +43,31 @@ To launch on startup:
 1. Open Run (Win+R).
 2. Type ```shell:startup```.
 3. Place a shortcut of the exe into the folder.
+
+To start in debug mode for additional logging:
+
+1. Open Powershell and locate the folder where ThunderbirdTray is.
+2. Type ```.\ThunderbirdTray.exe --debug```
+3. Check for the log.txt file in the working directory
+
+Alternatively place ```launch_debug.bat``` in the same directory as ThunderbirdTray and run it.
+
+### ThunderbirdTrayUpdater
+
+This is a console application, either run it with default settings and follow the prompts, or use the CLI as follows:
+
+```bash
+usage: Updater for ThunderbirdTray (v1.0.0). [-h] [-v] [-d DIR] [-f] [-p]
+                                             [--draft]
+
+optional arguments:
+  -h, --help         show this help message and exit
+  -v, --verbose      Enable debug output.
+  -d DIR, --dir DIR
+  -f, --force        Will download latest regardless of current version.
+  -p, --pre          Allow pre-releases.
+  --draft            Allow drafts.
+```
 
 ## How does it work?
 
@@ -49,6 +78,9 @@ will remain in the tray and can restore the window if clicked on.
 To exit, right click the tray application and click exit. This will not close Thunderbird.
 
 Closing Thunderbird however will close this application.
+
+Starting Thunderbird does not start this application though, this application is intended to be started in lieu of 
+Thunderbird.
 
 ### HELP I CAN'T FIND THUNDERBIRD
 
@@ -74,8 +106,11 @@ I'd settle it once and for all (I hope) by not using WebExtensions and relying o
 
 There is also another Win32 application [TBTray](https://github.com/sagamusix/TBTray) that does 
 something simillar, but this is achieved through Dll injection. I believe it is an ugly way to 
-accomplish this relatively simple task that can be more elegantly and concisely tackled (I do 
-it in one code file!). Furthermore, that application has limitations that this one does not.
+accomplish this relatively simple task that can be more elegantly and concisely tackled. Furthermore, 
+that application has limitations that this one does not.
+
+There is also [birdtray](https://github.com/gyunaev/birdtray), which I have not personally used but from the looks 
+of the project, it may be worth trying out if you're looking for something a bit more sophisticated.
 
 ## I've got suggestions (or a bug)!
 
