@@ -14,7 +14,6 @@ The releases are seperated into a few versions for compatiblity reasons.
 
 * NET Framework - Requires .NET Framework 4.6.1 runtime, preinstalled on Windows 10. **Recommended**.
 * NET Core - Self Contained requires no installed runtimes.
-* NET Core - Requires [.NET Core 3.1 runtime](https://dotnet.microsoft.com/download/dotnet-core/current/runtime).
 
 It is recommended to use .NET Framework if you are not sure what version to use.
 
