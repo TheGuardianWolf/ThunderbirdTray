@@ -11,12 +11,15 @@ using System.Threading.Tasks;
 using Serilog;
 using Serilog.Core;
 using ThunderbirdTray.Win32;
+using System.Text;
 
 namespace ThunderbirdTray
 {
     public partial class TrayBird : ApplicationContext
     {
         public static readonly string Guid = ((GuidAttribute)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(GuidAttribute), true)[0]).Value;
+        private static readonly string thunderbirdMainWindowClassName = "MozillaWindowClass";
+        private static readonly string thunderbirdMainWindowTextEndsWith = "- Mozilla Thunderbird";
 
         private Logger log;
 
@@ -29,7 +32,7 @@ namespace ThunderbirdTray
         private bool thunderbirdShown = true;
         private WindowVisualState lastVisualState = WindowVisualState.Minimized;
         private AutomationElement thunderbirdAutomationElement;
-        private int restoreState
+        private User32.ShowWindowType restoreState
         {
             get
             {
@@ -39,21 +42,21 @@ namespace ThunderbirdTray
                     {
                         if ((User32.GetWindowPlacement(thunderbirdMainWindowHandle).flags & User32.WPF_RESTORETOMAXIMIZED) > 0)
                         {
-                            return User32.SW_MAXIMIZE;
+                            return User32.ShowWindowType.SW_MAXIMIZE;
                         }
                         else
                         {
-                            return User32.SW_NORMAL;
+                            return User32.ShowWindowType.SW_NORMAL;
                         }
                     }
                     else
                     {
-                        return User32.SW_NORMAL;
+                        return User32.ShowWindowType.SW_NORMAL;
                     }
                 }
                 else
                 {
-                    return lastVisualState == WindowVisualState.Maximized ? User32.SW_MAXIMIZE : User32.SW_NORMAL;
+                    return lastVisualState == WindowVisualState.Maximized ? User32.ShowWindowType.SW_MAXIMIZE : User32.ShowWindowType.SW_NORMAL;
                 }
             }
         }
@@ -77,12 +80,14 @@ namespace ThunderbirdTray
             log.Information("Started TrayBird.");
             ToolStripMenuItem showMenuItem = new ToolStripMenuItem("Show / Hide Thunderbird", null, new EventHandler(ToggleShowThunderbird));
             showMenuItem.Font = new Font(showMenuItem.Font, showMenuItem.Font.Style | FontStyle.Bold);
+            showMenuItem.Enabled = false;
             //ToolStripMenuItem configMenuItem = new ToolStripMenuItem("Configuration", null, new EventHandler(ShowConfig));
             //configMenuItem.Enabled = false;
             ToolStripMenuItem exitMenuItem = new ToolStripMenuItem("Exit", null, new EventHandler(Exit));
             contextMenu = new ContextMenuStrip();
             contextMenu.Items.AddRange(new ToolStripMenuItem[] { showMenuItem, /*configMenuItem,*/ exitMenuItem });
             notifyIcon = new NotifyIcon();
+            notifyIcon.Text = "ThunderbirdTray - Starting up...";
             notifyIcon.Icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
             notifyIcon.ContextMenuStrip = contextMenu;
             notifyIcon.Click += NotifyIcon_Click;
@@ -103,7 +108,7 @@ namespace ThunderbirdTray
                     log.Debug("Starting initilisation task.");
                     using (var process = Process.GetProcessesByName("thunderbird").FirstOrDefault())
                     {
-                        if (process == null || process.MainWindowHandle == IntPtr.Zero)
+                        if (process == null)
                         {
                             log.Debug("Thunderbird process not detected. {@process}", process);
                             StartThunderbird();
@@ -113,16 +118,15 @@ namespace ThunderbirdTray
                     int retries = 0;
                     while (!HookThunderbird())
                     {
-                        if (retries >= 30)
-                        {
-                            log.Error("Cannot hook on to the Thunderbird process.");
-                            throw new TimeoutException("Cannot hook on to the thunderbird process.");
-                        }
                         await Task.Delay(100);
                         retries += 1;
                     }
                     log.Debug("Hook took {@retries} retries.", retries);
                 });
+
+                contextMenu.Items[0].Enabled = true;
+                notifyIcon.Text = "ThunderbirdTray - Active";
+
                 log.Information("Initialised.");
             }
             else
@@ -202,18 +206,23 @@ namespace ThunderbirdTray
 
         private void ShowThunderbird()
         {
-            log.Debug("Showing Thunderbird with last state as {@lastVisualState}.", lastVisualState);
-            User32.ShowWindow(thunderbirdMainWindowHandle, restoreState);
-            User32.SetForegroundWindow(thunderbirdMainWindowHandle);
-            thunderbirdMainWindowHandle = thunderbirdProcess.MainWindowHandle;
-            thunderbirdShown = true;
+            if (thunderbirdMainWindowHandle != IntPtr.Zero)
+            {
+                log.Debug("Showing Thunderbird with last state as {@lastVisualState}.", lastVisualState);
+                User32.ShowWindow(thunderbirdMainWindowHandle, restoreState);
+                User32.SetForegroundWindow(thunderbirdMainWindowHandle);
+                thunderbirdShown = true;
+            }
         }
 
         private void HideThunderbird()
         {
-            log.Debug("Hiding Thunderbird with last state as {@lastVisualState}.", lastVisualState);
-            User32.ShowWindow(thunderbirdMainWindowHandle, User32.SW_HIDE);
-            thunderbirdShown = false;
+            if (thunderbirdMainWindowHandle != IntPtr.Zero)
+            {
+                log.Debug("Hiding Thunderbird with last state as {@lastVisualState}.", lastVisualState);
+                User32.ShowWindow(thunderbirdMainWindowHandle, User32.ShowWindowType.SW_HIDE);
+                thunderbirdShown = false;
+            }
         }
 
         private void ShowConfig(object sender, EventArgs e)
@@ -247,14 +256,18 @@ namespace ThunderbirdTray
                 return false;
             }
 
-            if (thunderbirdProcess.MainWindowHandle == IntPtr.Zero)
+            thunderbirdMainWindowHandle = FindMainThunderbirdWindow(thunderbirdProcess);
+
+            if (thunderbirdMainWindowHandle == IntPtr.Zero)
             {
                 log.Error("Cannot find Thunderbird's main window.");
                 // Main window is lost (hidden)
                 return false;
             }
-
-            thunderbirdMainWindowHandle = thunderbirdProcess.MainWindowHandle;
+            else
+            {
+                log.Debug("Hooked on to window handle {@thunderbirdMainWindowHandle}", thunderbirdMainWindowHandle);
+            }
 
             thunderbirdProcess.EnableRaisingEvents = true;
             thunderbirdProcess.Exited += Thunderbird_Exited;
@@ -283,6 +296,49 @@ namespace ThunderbirdTray
             return true;
         }
 
+        private IntPtr FindMainThunderbirdWindow(Process thunderbirdProcess)
+        {
+            IntPtr thunderbirdWindow = IntPtr.Zero;
+            var thunderbirdProcessId = thunderbirdProcess.Id;
+
+            User32.EnumWindows((IntPtr hWnd, IntPtr lParam) =>
+            {
+                int windowProcessId = 0;
+                User32.GetWindowThreadProcessId(hWnd, out windowProcessId);
+
+                // If process ids don't match or it is a child window, return true for a new window.
+                if (windowProcessId != thunderbirdProcessId || User32.GetWindow(hWnd, User32.GetWindowType.GW_OWNER) != IntPtr.Zero)
+                {
+                    return true;
+                }
+
+                var classNameBuilder = new StringBuilder();
+                var classNameLength = User32.GetClassName(hWnd, classNameBuilder, int.MaxValue);
+                var className = classNameBuilder.ToString();
+
+                if (className != thunderbirdMainWindowClassName)
+                {
+                    return true;
+                }
+
+                var windowTextBuilder = new StringBuilder();
+                var windowTextLength = User32.GetWindowText(hWnd, windowTextBuilder, int.MaxValue);
+                var windowText = windowTextBuilder.ToString();
+
+                if (!windowText.EndsWith(thunderbirdMainWindowTextEndsWith))
+                {
+                    return true;
+                }
+
+                thunderbirdWindow = hWnd;
+
+                // Ends enumeration
+                return false;
+            }, IntPtr.Zero);
+
+            return thunderbirdWindow;
+        }
+
         private void Thunderbird_VisualStateChanged(object sender, AutomationPropertyChangedEventArgs e)
         {
             WindowVisualState visualState = WindowVisualState.Normal;
@@ -303,8 +359,6 @@ namespace ThunderbirdTray
             }
             else
             {
-                // Update window handle in case something odd happens
-                thunderbirdMainWindowHandle = thunderbirdProcess.MainWindowHandle;
                 thunderbirdShown = true;
                 lastVisualState = visualState;
             }
@@ -319,7 +373,6 @@ namespace ThunderbirdTray
         private void UnhookThunderbird()
         {
             log.Information("Unhooking Thunderbird...");
-            Automation.RemoveAllEventHandlers();
 
             if (thunderbirdProcess != null)
             {
@@ -329,7 +382,7 @@ namespace ThunderbirdTray
                     {
                         log.Debug("Previously hidden, showing.");
                         // If previously hidden, show to avoid bug
-                        User32.ShowWindow(thunderbirdMainWindowHandle, User32.SW_NORMAL);
+                        User32.ShowWindow(thunderbirdMainWindowHandle, User32.ShowWindowType.SW_NORMAL);
                     }
 
                     thunderbirdMainWindowHandle = IntPtr.Zero;
@@ -337,7 +390,7 @@ namespace ThunderbirdTray
 
                 if (thunderbirdAutomationElement != null)
                 {
-                    //Automation.RemoveAutomationPropertyChangedEventHandler(thunderbirdAutomationElement, Thunderbird_VisualStateChanged);
+                    Automation.RemoveAllEventHandlers();
                     thunderbirdAutomationElement = null;
                 }
                 thunderbirdProcess.Dispose();
