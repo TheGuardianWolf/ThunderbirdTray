@@ -115,3 +115,11 @@ of the project, it may be worth trying out if you're looking for something a bit
 
 Leave an issue and I'll take a look. You'll notice that there is a disabled configuration 
 button in the context menu. I've yet to provide those options.
+
+## Additional Stuff
+
+**Thuderbird Icon**
+
+Attribution to Ura Design for use of the Thunderbird Icon asset: https://ura.design/2018/07/05/thunderbird-style-guide.html.
+
+The Thunderbird icon is licensed under the [Creative Commons Attribution 3.0 Unported license](https://creativecommons.org/licenses/by/3.0/deed.en). 
