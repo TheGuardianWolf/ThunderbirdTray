@@ -19,7 +19,7 @@ namespace ThunderbirdTray
     {
         public static readonly string Guid = ((GuidAttribute)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(GuidAttribute), true)[0]).Value;
         private static readonly string thunderbirdMainWindowClassName = "MozillaWindowClass";
-        private static readonly string thunderbirdMainWindowTextEndsWith = "- Mozilla Thunderbird";
+        private static readonly string thunderbirdMainWindowTextEndsWith = " Mozilla Thunderbird";
 
         private Logger log;
 
