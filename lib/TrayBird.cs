@@ -32,6 +32,8 @@ namespace ThunderbirdTray
         private bool thunderbirdShown = true;
         private WindowVisualState lastVisualState = WindowVisualState.Minimized;
         private AutomationElement thunderbirdAutomationElement;
+        private bool trayLaunched = false; // Was Thunderbird last launched with TrayBird?
+
         private User32.ShowWindowType restoreState
         {
             get
@@ -200,6 +202,7 @@ namespace ThunderbirdTray
             )
             {
                 log.Information("Starting Thunderbird...");
+                trayLaunched = true;
                 process.Start();
             }
         }
@@ -282,7 +285,15 @@ namespace ThunderbirdTray
 
             // If not already hidden and is currently minimised, hide immediately
             var isIconic = User32.IsIconic(thunderbirdMainWindowHandle);
-            if (thunderbirdShown && isIconic)
+
+            if (trayLaunched)
+            {
+                log.Information("Thunderbird launched with tray application, hiding now. {@thunderbirdShown}.", thunderbirdShown);
+                lastVisualState = (WindowVisualState)thunderbirdAutomationElement.GetCurrentPropertyValue(WindowPattern.WindowVisualStateProperty);
+                HideThunderbird();
+
+            }
+            if ((thunderbirdShown && isIconic) || trayLaunched)
             {
                 log.Information("Thunderbird is already minimised, hiding now. {@thunderbirdShown}, {@isIconic}.", thunderbirdShown, isIconic);
                 HideThunderbird();
