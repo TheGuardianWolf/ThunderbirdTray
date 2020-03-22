@@ -13,7 +13,7 @@ import traceback
 import winreg
 
 
-VERSION = [1, 0, 0]
+VERSION = [1, 0, 1]
 URL_RELEASES = "https://api.github.com/repos/TheGuardianWolf/ThunderbirdTray/releases"
 FOLDER_INSTALL = "./ThunderbirdTray"
 BLOCK_SIZE = 1024 * 512
@@ -118,7 +118,7 @@ def main():
         if len(release["assets"]) > 0:
             if (not release["prerelease"] or args.pre) and (not release["draft"] or args.draft):
                 try:
-                    modified_tag = release["tag_name"][1:].replace("-pre", "") if args.pre else modified_tag
+                    modified_tag = release["tag_name"][1:].replace("-pre", "") if args.pre else release["tag_name"][1:]
                     tag_version = int(modified_tag.replace(".", ""))
                     release["tag_name"] = modified_tag
                     valid_releases.append((tag_version, release))
