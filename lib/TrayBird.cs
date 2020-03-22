@@ -19,7 +19,7 @@ namespace ThunderbirdTray
     {
         public static readonly string Guid = ((GuidAttribute)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(GuidAttribute), true)[0]).Value;
         private static readonly string thunderbirdMainWindowClassName = "MozillaWindowClass";
-        private static readonly string thunderbirdMainWindowTextEndsWith = "- Mozilla Thunderbird";
+        private static readonly string thunderbirdMainWindowTextEndsWith = " Mozilla Thunderbird";
 
         private Logger log;
 
@@ -32,6 +32,8 @@ namespace ThunderbirdTray
         private bool thunderbirdShown = true;
         private WindowVisualState lastVisualState = WindowVisualState.Minimized;
         private AutomationElement thunderbirdAutomationElement;
+        private bool trayLaunched = false; // Was Thunderbird last launched with TrayBird?
+
         private User32.ShowWindowType restoreState
         {
             get
@@ -200,6 +202,7 @@ namespace ThunderbirdTray
             )
             {
                 log.Information("Starting Thunderbird...");
+                trayLaunched = true;
                 process.Start();
             }
         }
@@ -282,7 +285,15 @@ namespace ThunderbirdTray
 
             // If not already hidden and is currently minimised, hide immediately
             var isIconic = User32.IsIconic(thunderbirdMainWindowHandle);
-            if (thunderbirdShown && isIconic)
+
+            if (trayLaunched)
+            {
+                log.Information("Thunderbird launched with tray application, hiding now. {@thunderbirdShown}.", thunderbirdShown);
+                lastVisualState = (WindowVisualState)thunderbirdAutomationElement.GetCurrentPropertyValue(WindowPattern.WindowVisualStateProperty);
+                HideThunderbird();
+
+            }
+            if ((thunderbirdShown && isIconic) || trayLaunched)
             {
                 log.Information("Thunderbird is already minimised, hiding now. {@thunderbirdShown}, {@isIconic}.", thunderbirdShown, isIconic);
                 HideThunderbird();
@@ -312,8 +323,9 @@ namespace ThunderbirdTray
                     return true;
                 }
 
-                var classNameBuilder = new StringBuilder();
-                var classNameLength = User32.GetClassName(hWnd, classNameBuilder, int.MaxValue);
+                // Class names can only be a max length of 256 characters
+                var classNameBuilder = new StringBuilder(256);
+                var classNameLength = User32.GetClassName(hWnd, classNameBuilder, classNameBuilder.Capacity);
                 var className = classNameBuilder.ToString();
 
                 if (className != thunderbirdMainWindowClassName)
@@ -321,8 +333,9 @@ namespace ThunderbirdTray
                     return true;
                 }
 
-                var windowTextBuilder = new StringBuilder();
-                var windowTextLength = User32.GetWindowText(hWnd, windowTextBuilder, int.MaxValue);
+                int length = User32.GetWindowTextLength(hWnd);
+                var windowTextBuilder = new StringBuilder(length + 1);
+                var windowTextLength = User32.GetWindowText(hWnd, windowTextBuilder, windowTextBuilder.Capacity);
                 var windowText = windowTextBuilder.ToString();
 
                 if (!windowText.EndsWith(thunderbirdMainWindowTextEndsWith))
