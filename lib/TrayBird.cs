@@ -12,6 +12,7 @@ using Serilog;
 using Serilog.Core;
 using ThunderbirdTray.Win32;
 using System.Text;
+using ThunderbirdTray.Views;
 
 namespace ThunderbirdTray
 {
@@ -25,6 +26,7 @@ namespace ThunderbirdTray
 
         private NotifyIcon notifyIcon;
         private ContextMenuStrip contextMenu;
+        private Form optionsForm;
 
         private Task initTask;
         private Process thunderbirdProcess;
@@ -83,11 +85,10 @@ namespace ThunderbirdTray
             ToolStripMenuItem showMenuItem = new ToolStripMenuItem("Show / Hide Thunderbird", null, new EventHandler(ToggleShowThunderbird));
             showMenuItem.Font = new Font(showMenuItem.Font, showMenuItem.Font.Style | FontStyle.Bold);
             showMenuItem.Enabled = false;
-            //ToolStripMenuItem configMenuItem = new ToolStripMenuItem("Configuration", null, new EventHandler(ShowConfig));
-            //configMenuItem.Enabled = false;
+            ToolStripMenuItem configMenuItem = new ToolStripMenuItem("Options", null, new EventHandler(ShowConfig));
             ToolStripMenuItem exitMenuItem = new ToolStripMenuItem("Exit", null, new EventHandler(Exit));
             contextMenu = new ContextMenuStrip();
-            contextMenu.Items.AddRange(new ToolStripMenuItem[] { showMenuItem, /*configMenuItem,*/ exitMenuItem });
+            contextMenu.Items.AddRange(new ToolStripMenuItem[] { showMenuItem, configMenuItem, exitMenuItem });
             notifyIcon = new NotifyIcon();
             notifyIcon.Text = "ThunderbirdTray - Starting up...";
             notifyIcon.Icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
@@ -195,7 +196,7 @@ namespace ThunderbirdTray
                     {
                         FileName = filename,
                         CreateNoWindow = true,
-                        WindowStyle = ProcessWindowStyle.Minimized,
+                        WindowStyle = Properties.Settings.Default.MinimiseOnStart ? ProcessWindowStyle.Minimized : ProcessWindowStyle.Normal,
                         UseShellExecute = true
                     }
                 }
@@ -230,14 +231,14 @@ namespace ThunderbirdTray
 
         private void ShowConfig(object sender, EventArgs e)
         {
-            //if (configWindow.Visible)
-            //{
-            //    configWindow.Activate();
-            //}
-            //else
-            //{
-            //    configWindow.ShowDialog();
-            //}
+            optionsForm = new UserOptions();
+            optionsForm.FormClosed += OptionsForm_FormClosed;
+            optionsForm.Show();
+        }
+
+        private void OptionsForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            optionsForm = null;
         }
 
         private bool HookThunderbird()
@@ -286,22 +287,18 @@ namespace ThunderbirdTray
             // If not already hidden and is currently minimised, hide immediately
             var isIconic = User32.IsIconic(thunderbirdMainWindowHandle);
 
-            if (trayLaunched)
+            if (trayLaunched && Properties.Settings.Default.MinimiseOnStart)
             {
                 log.Information("Thunderbird launched with tray application, hiding now. {@thunderbirdShown}.", thunderbirdShown);
-                lastVisualState = (WindowVisualState)thunderbirdAutomationElement.GetCurrentPropertyValue(WindowPattern.WindowVisualStateProperty);
                 HideThunderbird();
 
             }
-            if ((thunderbirdShown && isIconic) || trayLaunched)
+            if (thunderbirdShown && isIconic)
             {
                 log.Information("Thunderbird is already minimised, hiding now. {@thunderbirdShown}, {@isIconic}.", thunderbirdShown, isIconic);
                 HideThunderbird();
             }
-            else
-            {
-                lastVisualState = (WindowVisualState)thunderbirdAutomationElement.GetCurrentPropertyValue(WindowPattern.WindowVisualStateProperty);
-            }
+            lastVisualState = (WindowVisualState)thunderbirdAutomationElement.GetCurrentPropertyValue(WindowPattern.WindowVisualStateProperty);
             log.Debug("Setting visual state as {@lastVisualState}.", lastVisualState);
 
             return true;

@@ -22,5 +22,17 @@ namespace ThunderbirdTray.Properties {
                 return defaultInstance;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool MinimiseOnStart {
+            get {
+                return ((bool)(this["MinimiseOnStart"]));
+            }
+            set {
+                this["MinimiseOnStart"] = value;
+            }
+        }
     }
 }

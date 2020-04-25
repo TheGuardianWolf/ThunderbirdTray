@@ -6,9 +6,13 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <Platforms>AnyCPU;x64;x86</Platforms>
-    <Version>1.4.0</Version>
+    <Version>1.5.0</Version>
     <RootNamespace>ThunderbirdTray</RootNamespace>
     <AssemblyName>ThunderbirdTray</AssemblyName>
+    <Copyright>Open Source - MIT</Copyright>
+    <Company>PixelCollider</Company>
+    <RepositoryUrl>https://github.com/TheGuardianWolf/ThunderbirdTray</RepositoryUrl>
+    <RepositoryType>Git</RepositoryType>
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
