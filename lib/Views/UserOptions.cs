@@ -15,10 +15,12 @@ namespace ThunderbirdTray.Views
         public UserOptions()
         {
             InitializeComponent();
+            HookMethodComboBox.SelectedIndex = Properties.Settings.Default.HookMethod;
         }
 
         private void SaveButton_Click(object sender, EventArgs e)
         {
+            Properties.Settings.Default.HookMethod = HookMethodComboBox.SelectedIndex;
             Properties.Settings.Default.Save();
             Close();
         }

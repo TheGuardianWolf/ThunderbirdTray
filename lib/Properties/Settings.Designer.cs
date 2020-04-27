@@ -34,5 +34,17 @@ namespace ThunderbirdTray.Properties {
                 this["MinimiseOnStart"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int HookMethod {
+            get {
+                return ((int)(this["HookMethod"]));
+            }
+            set {
+                this["HookMethod"] = value;
+            }
+        }
     }
 }

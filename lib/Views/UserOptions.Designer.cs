@@ -35,8 +35,11 @@
             this.SaveButton = new System.Windows.Forms.Button();
             this.DiscardButton = new System.Windows.Forms.Button();
             this.trayBirdBindingSource = new System.Windows.Forms.BindingSource(this.components);
+            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.HookMethodComboBox = new System.Windows.Forms.ComboBox();
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.trayBirdBindingSource)).BeginInit();
+            this.groupBox2.SuspendLayout();
             this.SuspendLayout();
             // 
             // groupBox1
@@ -44,7 +47,7 @@
             this.groupBox1.Controls.Add(this.checkboxMinimiseThundebird);
             this.groupBox1.Location = new System.Drawing.Point(12, 12);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(258, 85);
+            this.groupBox1.Size = new System.Drawing.Size(258, 70);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Startup";
@@ -83,12 +86,34 @@
             this.DiscardButton.UseVisualStyleBackColor = true;
             this.DiscardButton.Click += new System.EventHandler(this.CancelButton_Click);
             // 
+            // groupBox2
+            // 
+            this.groupBox2.Controls.Add(this.HookMethodComboBox);
+            this.groupBox2.Location = new System.Drawing.Point(12, 88);
+            this.groupBox2.Name = "groupBox2";
+            this.groupBox2.Size = new System.Drawing.Size(258, 73);
+            this.groupBox2.TabIndex = 3;
+            this.groupBox2.TabStop = false;
+            this.groupBox2.Text = "Window Detection Method";
+            // 
+            // HookMethodComboBox
+            // 
+            this.HookMethodComboBox.FormattingEnabled = true;
+            this.HookMethodComboBox.Items.AddRange(new object[] {
+            "UI Automation",
+            "Polling"});
+            this.HookMethodComboBox.Location = new System.Drawing.Point(17, 31);
+            this.HookMethodComboBox.Name = "HookMethodComboBox";
+            this.HookMethodComboBox.Size = new System.Drawing.Size(232, 24);
+            this.HookMethodComboBox.TabIndex = 0;
+            // 
             // UserOptions
             // 
             this.AcceptButton = this.SaveButton;
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(282, 353);
+            this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.DiscardButton);
             this.Controls.Add(this.SaveButton);
             this.Controls.Add(this.groupBox1);
@@ -103,6 +128,7 @@
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.trayBirdBindingSource)).EndInit();
+            this.groupBox2.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -114,5 +140,7 @@
         private System.Windows.Forms.Button SaveButton;
         private System.Windows.Forms.Button DiscardButton;
         private System.Windows.Forms.BindingSource trayBirdBindingSource;
+        private System.Windows.Forms.GroupBox groupBox2;
+        private System.Windows.Forms.ComboBox HookMethodComboBox;
     }
 }

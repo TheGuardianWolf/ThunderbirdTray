@@ -13,6 +13,7 @@ using Serilog.Core;
 using ThunderbirdTray.Win32;
 using System.Text;
 using ThunderbirdTray.Views;
+using ThunderbirdTray.WindowStateHooks;
 
 namespace ThunderbirdTray
 {
@@ -32,38 +33,9 @@ namespace ThunderbirdTray
         private Process thunderbirdProcess;
         private IntPtr thunderbirdMainWindowHandle;
         private bool thunderbirdShown = true;
-        private WindowVisualState lastVisualState = WindowVisualState.Minimized;
-        private AutomationElement thunderbirdAutomationElement;
         private bool trayLaunched = false; // Was Thunderbird last launched with TrayBird?
-
-        private User32.ShowWindowType restoreState
-        {
-            get
-            {
-                if (lastVisualState == WindowVisualState.Minimized)
-                {
-                    if (thunderbirdMainWindowHandle != null)
-                    {
-                        if ((User32.GetWindowPlacement(thunderbirdMainWindowHandle).flags & User32.WPF_RESTORETOMAXIMIZED) > 0)
-                        {
-                            return User32.ShowWindowType.SW_MAXIMIZE;
-                        }
-                        else
-                        {
-                            return User32.ShowWindowType.SW_NORMAL;
-                        }
-                    }
-                    else
-                    {
-                        return User32.ShowWindowType.SW_NORMAL;
-                    }
-                }
-                else
-                {
-                    return lastVisualState == WindowVisualState.Maximized ? User32.ShowWindowType.SW_MAXIMIZE : User32.ShowWindowType.SW_NORMAL;
-                }
-            }
-        }
+        private IWindowStateHook windowStateHook;
+        private HookMethod currentHookMethod;
 
         public TrayBird(bool debugLog=true)
         {
@@ -152,6 +124,25 @@ namespace ThunderbirdTray
             }
         }
 
+        private User32.ShowWindowType CalculateWindowRestoreState()
+        {
+            if (thunderbirdMainWindowHandle != null)
+            {
+                if ((User32.GetWindowPlacement(thunderbirdMainWindowHandle).flags & User32.WPF_RESTORETOMAXIMIZED) > 0)
+                {
+                    return User32.ShowWindowType.SW_MAXIMIZE;
+                }
+                else
+                {
+                    return User32.ShowWindowType.SW_NORMAL;
+                }
+            }
+            else
+            {
+                return User32.ShowWindowType.SW_NORMAL;
+            }
+        }
+
         private void ToggleShowThunderbird(object sender, EventArgs e)
         {
             ToggleShowThunderbird();
@@ -212,8 +203,8 @@ namespace ThunderbirdTray
         {
             if (thunderbirdMainWindowHandle != IntPtr.Zero)
             {
-                log.Debug("Showing Thunderbird with last state as {@lastVisualState}.", lastVisualState);
-                User32.ShowWindow(thunderbirdMainWindowHandle, restoreState);
+                log.Debug("Showing Thunderbird.");
+                User32.ShowWindow(thunderbirdMainWindowHandle, CalculateWindowRestoreState());
                 User32.SetForegroundWindow(thunderbirdMainWindowHandle);
                 thunderbirdShown = true;
             }
@@ -223,7 +214,7 @@ namespace ThunderbirdTray
         {
             if (thunderbirdMainWindowHandle != IntPtr.Zero)
             {
-                log.Debug("Hiding Thunderbird with last state as {@lastVisualState}.", lastVisualState);
+                log.Debug("Hiding Thunderbird.");
                 User32.ShowWindow(thunderbirdMainWindowHandle, User32.ShowWindowType.SW_HIDE);
                 thunderbirdShown = false;
             }
@@ -238,6 +229,11 @@ namespace ThunderbirdTray
 
         private void OptionsForm_FormClosed(object sender, FormClosedEventArgs e)
         {
+            if (currentHookMethod != (HookMethod)Properties.Settings.Default.HookMethod)
+            {
+                UnhookThunderbird();
+                HookThunderbird();
+            }
             optionsForm = null;
         }
 
@@ -275,12 +271,24 @@ namespace ThunderbirdTray
 
             thunderbirdProcess.EnableRaisingEvents = true;
             thunderbirdProcess.Exited += Thunderbird_Exited;
-            thunderbirdAutomationElement = AutomationElement.FromHandle(thunderbirdMainWindowHandle);
-            Automation.AddAutomationPropertyChangedEventHandler(
-                thunderbirdAutomationElement,
-                TreeScope.Element,
-                Thunderbird_VisualStateChanged,
-                new AutomationProperty[] { WindowPattern.WindowVisualStateProperty });
+            switch(Properties.Settings.Default.HookMethod)
+            {
+                case (int)HookMethod.UIAutomation:
+                    windowStateHook = new UIAutomation();
+                    break;
+                case (int)HookMethod.Polling:
+                default:
+                    windowStateHook = new Polling();
+                    break;
+            }
+            currentHookMethod = (HookMethod)Properties.Settings.Default.HookMethod;
+
+            if (!windowStateHook.Hook(thunderbirdMainWindowHandle))
+            {
+                return false;
+            }
+
+            windowStateHook.WindowStateChange += Thunderbird_VisualStateChanged;
 
             log.Debug("Attached event handlers for window.");
 
@@ -298,8 +306,6 @@ namespace ThunderbirdTray
                 log.Information("Thunderbird is already minimised, hiding now. {@thunderbirdShown}, {@isIconic}.", thunderbirdShown, isIconic);
                 HideThunderbird();
             }
-            lastVisualState = (WindowVisualState)thunderbirdAutomationElement.GetCurrentPropertyValue(WindowPattern.WindowVisualStateProperty);
-            log.Debug("Setting visual state as {@lastVisualState}.", lastVisualState);
 
             return true;
         }
@@ -349,12 +355,12 @@ namespace ThunderbirdTray
             return thunderbirdWindow;
         }
 
-        private void Thunderbird_VisualStateChanged(object sender, AutomationPropertyChangedEventArgs e)
+        private void Thunderbird_VisualStateChanged(object sender, WindowStateChangeEventArgs e)
         {
             WindowVisualState visualState = WindowVisualState.Normal;
             try
             {
-                visualState = (WindowVisualState)e.NewValue;
+                visualState = (WindowVisualState)e.WindowState;
             }
             catch (InvalidCastException)
             {
@@ -370,7 +376,6 @@ namespace ThunderbirdTray
             else
             {
                 thunderbirdShown = true;
-                lastVisualState = visualState;
             }
         }
 
@@ -398,11 +403,9 @@ namespace ThunderbirdTray
                     thunderbirdMainWindowHandle = IntPtr.Zero;
                 }
 
-                if (thunderbirdAutomationElement != null)
-                {
-                    Automation.RemoveAllEventHandlers();
-                    thunderbirdAutomationElement = null;
-                }
+                windowStateHook.Unhook();
+                windowStateHook.WindowStateChange -= Thunderbird_VisualStateChanged;
+                windowStateHook = null;
                 thunderbirdProcess.Dispose();
                 thunderbirdProcess = null;
                 initTask = null;
@@ -428,5 +431,11 @@ namespace ThunderbirdTray
 
             base.Dispose(disposing);
         }
+    }
+
+    enum HookMethod : int
+    {
+        UIAutomation = 0,
+        Polling = 1,
     }
 }

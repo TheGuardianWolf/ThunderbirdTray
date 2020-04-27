@@ -71,6 +71,9 @@
     <Reference Include="UIAutomationTypes" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="WindowStateHooks\IWindowStateHook.cs" />
+    <Compile Include="WindowStateHooks\Polling.cs" />
+    <Compile Include="WindowStateHooks\UIAutomation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
