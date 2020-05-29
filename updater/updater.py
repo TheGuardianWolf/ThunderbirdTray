@@ -65,7 +65,7 @@ def detect_runtime():
 
 def compare_versions(a, b):
     for curr, new in zip(a, b):
-        if curr < new:
+        if int(curr) < int(new):
             return False
     return True
 
