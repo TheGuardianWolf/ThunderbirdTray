@@ -133,7 +133,7 @@ def main():
     else:
         latest = valid_releases[0][1]
     
-    version = latest["tag_name"].split(".")
+    version = [int(x) for x in latest["tag_name"].split(".")]
     assets = latest["assets"]
 
     log.info("Newest release is v{}.".format(".".join(map(str, version))))
