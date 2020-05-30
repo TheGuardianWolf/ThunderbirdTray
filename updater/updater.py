@@ -13,7 +13,7 @@ import traceback
 import winreg
 
 
-VERSION = [1, 0, 1]
+VERSION = [1, 0, 2]
 URL_RELEASES = "https://api.github.com/repos/TheGuardianWolf/ThunderbirdTray/releases"
 FOLDER_INSTALL = "./ThunderbirdTray"
 BLOCK_SIZE = 1024 * 512
