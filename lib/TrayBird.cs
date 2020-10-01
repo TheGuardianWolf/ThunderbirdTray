@@ -168,18 +168,27 @@ namespace ThunderbirdTray
         public void StartThunderbird()
         {
             string filename = null;
-            var filename64 = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramW6432%"), "Mozilla Thunderbird", "thunderbird.exe");
-            var filename86 = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles(x86)%"), "Mozilla Thunderbird", "thunderbird.exe");
 
-            if (File.Exists(filename64))
+            if (string.IsNullOrWhiteSpace(Properties.Settings.Default.ThunderbirdPath))
             {
-                filename = filename64;
+                var filename64 = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramW6432%"), "Mozilla Thunderbird", "thunderbird.exe");
+                var filename86 = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles(x86)%"), "Mozilla Thunderbird", "thunderbird.exe");
+
+                if (File.Exists(filename64))
+                {
+                    filename = filename64;
+                }
+                else if (File.Exists(filename86))
+                {
+                    filename = filename86;
+                }
+                log.Information("Thunderbird executable assumed at {@filename}", filename);
             }
-            else if (File.Exists(filename86))
+            else
             {
-                filename = filename86;
+                filename = Environment.ExpandEnvironmentVariables(Properties.Settings.Default.ThunderbirdPath);
+                log.Information("Thunderbird executable specified by user to be at {@filename}", filename);
             }
-            log.Information("Thunderbird executable assumed at {@filename}", filename);
 
             using (var process = new Process 
                 {
