@@ -39,54 +39,46 @@ namespace ThunderbirdTray
 
         public TrayBird(bool debugLog=true)
         {
-            var logConfig = new LoggerConfiguration()
-                .WriteTo.File("log.txt");
+            var logConfig = new LoggerConfiguration();
 
             if (debugLog)
             {
-                logConfig = logConfig.MinimumLevel.Debug();
-            }
-            else
-            {
-                logConfig = logConfig.MinimumLevel.Warning();
+                logConfig = logConfig.WriteTo.File("log.txt").MinimumLevel.Debug();
             }
 
             log = logConfig.CreateLogger();
-
-            log.Information("Started TrayBird.");
-            ToolStripMenuItem showMenuItem = new ToolStripMenuItem("Show / Hide Thunderbird", null, new EventHandler(ToggleShowThunderbird));
-            showMenuItem.Font = new Font(showMenuItem.Font, showMenuItem.Font.Style | FontStyle.Bold);
-            showMenuItem.Enabled = false;
-            ToolStripMenuItem configMenuItem = new ToolStripMenuItem("Options", null, new EventHandler(ShowConfig));
-            ToolStripMenuItem exitMenuItem = new ToolStripMenuItem("Exit", null, new EventHandler(Exit));
-            contextMenu = new ContextMenuStrip();
-            contextMenu.Items.AddRange(new ToolStripMenuItem[] { showMenuItem, configMenuItem, exitMenuItem });
-            notifyIcon = new NotifyIcon();
-            notifyIcon.Text = "ThunderbirdTray - Starting up...";
-            notifyIcon.Icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
-            notifyIcon.ContextMenuStrip = contextMenu;
-            notifyIcon.Click += NotifyIcon_Click;
-            notifyIcon.Visible = true;
-            log.Debug("Context menu created.");
-
-            Initialise();
-            log.Information("Program started.");
         }
 
-        private void Initialise()
+        public void Initialise()
         {
-
             if (initTask == null)
             {
+                ToolStripMenuItem showMenuItem = new ToolStripMenuItem("Show / Hide Thunderbird", null, new EventHandler(ToggleShowThunderbird));
+                showMenuItem.Font = new Font(showMenuItem.Font, showMenuItem.Font.Style | FontStyle.Bold);
+                showMenuItem.Enabled = false;
+                ToolStripMenuItem configMenuItem = new ToolStripMenuItem("Options", null, new EventHandler(ShowConfig));
+                ToolStripMenuItem exitMenuItem = new ToolStripMenuItem("Exit", null, new EventHandler(Exit));
+                contextMenu = new ContextMenuStrip();
+                contextMenu.Items.AddRange(new ToolStripMenuItem[] { showMenuItem, configMenuItem, exitMenuItem });
+                notifyIcon = new NotifyIcon();
+                notifyIcon.Text = "ThunderbirdTray - Starting up...";
+                notifyIcon.Icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
+                notifyIcon.ContextMenuStrip = contextMenu;
+                notifyIcon.Click += NotifyIcon_Click;
+                notifyIcon.Visible = true;
+                log.Debug("Context menu created.");
+
                 initTask = Task.Run(async () =>
                 {
                     log.Debug("Starting initilisation task.");
+
                     using (var process = Process.GetProcessesByName("thunderbird").FirstOrDefault())
                     {
                         if (process == null)
                         {
                             log.Debug("Thunderbird process not detected. {@process}", process);
                             StartThunderbird();
+                            trayLaunched = true;
                         }
                     }
 
@@ -203,7 +195,6 @@ namespace ThunderbirdTray
             )
             {
                 log.Information("Starting Thunderbird...");
-                trayLaunched = true;
                 process.Start();
             }
         }

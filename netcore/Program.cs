@@ -26,16 +26,21 @@ namespace ThunderbirdTray
 
             using (Mutex mutex = new Mutex(false, "Global\\" + TrayBird.Guid))
             {
+                var trayBird = new TrayBird(debug);
+
                 if (!mutex.WaitOne(0, false))
                 {
-                    MessageBox.Show("Instance already running");
+                    trayBird.StartThunderbird();
                     return;
                 }
 
                 Application.SetHighDpiMode(HighDpiMode.SystemAware);
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                Application.Run(new TrayBird(debug));
+
+                trayBird.Initialise();
+
+                Application.Run(trayBird);
             }
         }
     }
