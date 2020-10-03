@@ -13,6 +13,11 @@
     <Company>PixelCollider</Company>
     <RepositoryUrl>https://github.com/TheGuardianWolf/ThunderbirdTray</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
+    <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishTrimmed>true</PublishTrimmed>
+    <PublishReadyToRun>true</PublishReadyToRun>
+
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
