@@ -1,0 +1,61 @@
+name: .NET Core Desktop
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        configuration: [Release]
+
+    runs-on:
+      windows-latest # For a list of available runner types, refer to
+      # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
+
+    env:
+      Solution_Name: ThunderbirdTray.sln
+      Configuration: ${{ matrix.configuration }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      # Install the .NET Core workload
+      - name: Install .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.101
+
+      - name: Install 7zip
+        run: |
+          Invoke-WebRequest -Uri https://www.7-zip.org/a/7z1900-x64.exe -OutFile 7z.exe
+          ./7z.exe /S /D="${{ github.workspace }}\7z\"
+
+      # Add MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
+      - name: Setup MSBuild.exe
+        uses: microsoft/setup-msbuild@2008f912f56e61277eefaac6d1888b750582aa16
+
+      - name: Build Solution
+        run: msbuild $env:Solution_Name /restore /p:Configuration=$env:Configuration
+
+      - name: Publish NETCore Application
+        run: msbuild /t:publish netcore/ThunderbirdTray.NETCore.csproj /p:Configuration=$env:Configuration
+
+      - name: Pack Artifacts
+        run: |
+          ./7z/7z.exe a -mx=9 ThunderbirdTray.NETCore-selfcontained.zip ".\netcore\bin\$env:Configuration\netcoreapp3.1\win-x86\publish\*"
+          ./7z/7z.exe a -mx=9 ThunderbirdTray.NETFramework.zip ".\netframework\bin\$env:Configuration\*" -x!*\
+          dir *.zip
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ThunderbirdTray
+          if-no-files-found: error
+          path: '*.zip'
