@@ -4,6 +4,12 @@ Minimise thunderbird to tray with a Windows tray app.
 
 Tested on Windows 10.
 
+## Notice (21 Feb 2021)
+
+This application seems to be no longer needed for minimising Thunderbird to tray as of this time. **There is an option in the settings menu that lets you do this under General -> System Integration**.
+
+I have also since moved over to Outlook as a mail client, Thunderbird's calendar integrations were simply not cutting it and not letting me dismiss events.
+
 ## Releases
 
 Get the releases [here](https://github.com/TheGuardianWolf/ThunderbirdTray/releases).
